@@ -12,7 +12,7 @@ def update(state: State, host: Host) -> None:
     if host.fact.os == "Linux":
         if host.fact.linux_distribution["release_meta"]["ID"] == "neon":
             pkcon.update(state, host)
-        elif host.fact.linux_distribution["release_meta"]["ID"] == "ubuntu":
+        elif host.fact.linux_distribution["release_meta"]["ID"] in ["debian", "ubuntu"]:
             apt.update(state, host)
             apt.upgrade(state, host)
         elif host.fact.linux_distribution["release_meta"]["ID"] == "alpine":
