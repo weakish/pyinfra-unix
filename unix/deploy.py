@@ -5,20 +5,21 @@ from pyinfra.modules import apk, apt, python
 from unix.operation import pkcon
 from unix.operation import freebsd
 
+
 @deploy
 def update(state: State, host: Host) -> None:
-    if host.fact.os == 'Linux':
-        if host.fact.linux_distribution["release_meta"]["ID"] == 'neon':
+    if host.fact.os == "Linux":
+        if host.fact.linux_distribution["release_meta"]["ID"] == "neon":
             pkcon.update(state, host)
-        elif host.fact.linux_distribution["release_meta"]["ID"] == 'ubuntu':
+        elif host.fact.linux_distribution["release_meta"]["ID"] == "ubuntu":
             apt.update(state, host)
             apt.upgrade(state, host)
-        elif host.fact.linux_distribution["release_meta"]["ID"] == 'alpine':
+        elif host.fact.linux_distribution["release_meta"]["ID"] == "alpine":
             apk.update(state, host)
             apk.upgrade(state, host)
         else:
             python.raise_exception(state, host, NotImplementedError)
-    elif host.fact.os == 'FreeBSD':
+    elif host.fact.os == "FreeBSD":
         freebsd.update(state, host)
         freebsd.upgrade(state, host)
     else:
