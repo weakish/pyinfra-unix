@@ -1,7 +1,7 @@
 from pyinfra.api import deploy
 from pyinfra.api.state import State
 from pyinfra.api.host import Host
-from pyinfra.modules import apk, apt, python, server
+from pyinfra.modules import apk, apt, dnf, python, server
 from unix.operation import pkcon
 from unix.operation import freebsd
 
@@ -15,9 +15,12 @@ def update(state: State, host: Host) -> None:
         elif host.fact.linux_distribution["release_meta"]["ID"] in ["debian", "ubuntu"]:
             apt.update(state, host)
             apt.upgrade(state, host)
+        elif host.fact.linux_distribution["release_meta"]["ID"] == "fedora":
+            dnf.update(state, host)
         elif host.fact.linux_distribution["release_meta"]["ID"] == "alpine":
             apk.update(state, host)
             apk.upgrade(state, host)
+
         else:
             python.raise_exception(state, host, NotImplementedError)
     elif host.fact.os == "FreeBSD":
