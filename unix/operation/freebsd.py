@@ -17,7 +17,7 @@ def upgrade(
     """Apply FreeBSD security patches."""
     command: Dict[str, Union[str, List[int]]] = {
         "command": "freebsd-update install",
-        "success_exit_codes": [0, 2],  ## 2: no updates to install
+        "success_exit_codes": [0, 2],  # 2: no updates to install
     }
     yield command
 
