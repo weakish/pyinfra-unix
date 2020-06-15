@@ -1,7 +1,7 @@
 from pyinfra.api import deploy
 from pyinfra.api.state import State
 from pyinfra.api.host import Host
-from pyinfra.modules import apk, apt, python
+from pyinfra.modules import apk, apt, brew, python
 from unix.operation import pkcon
 from unix.operation import freebsd
 
@@ -22,5 +22,8 @@ def update(state: State, host: Host) -> None:
     elif host.fact.os == "FreeBSD":
         freebsd.update(state, host)
         freebsd.upgrade(state, host)
+    elif host.fact.os == "Darwin":
+        brew.update(state, host)
+        brew.upgrade(state, host)
     else:
         python.raise_exception(state, host, NotImplementedError)
