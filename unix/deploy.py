@@ -1,7 +1,7 @@
 import socket
 from os import environ
 from ipaddress import ip_address, IPv4Address, IPv6Address
-from pathlib import Path
+from pathlib import PosixPath
 from pyinfra.api import deploy
 from pyinfra.api.state import State
 from pyinfra.api.host import Host
@@ -46,7 +46,7 @@ def ipv6(state: State, host: Host) -> None:
 
 
 def _get_host_ip(
-    host: str, ssh_config_path: Path = Path.home().joinpath(".ssh", "config")
+    host: str, ssh_config_path: str = "~/.ssh/config"
 ) -> Union[IPv4Address, IPv6Address]:
     """
     1. If host.name is a short alias,
@@ -60,7 +60,9 @@ def _get_host_ip(
        assuming the domain is accessible from the local machine.
     3. Else raise an ValueError.
     """
-    config: SSHConfig = SSHConfig.from_path(str(ssh_config_path))
+    posix_path: PosixPath = PosixPath(ssh_config_path)
+    path_with_user_expanded: PosixPath = posix_path.expanduser()
+    config: SSHConfig = SSHConfig.from_path(str(path_with_user_expanded))
     # If `host.name` does not exist in `~/.ssh/config`,
     # `config.lookup(host.name)['hostname']` returns `host.name` itself.
     hostname: str = config.lookup(host)["hostname"]
@@ -80,15 +82,15 @@ def brook(state: State, host: Host) -> None:
         files.download(
             state,
             host,
-            "https://github.com/txthinking/brook/releases/download/v20200502/brook_linux_amd64",
+            "https://github.com/txthinking/brook/releases/download/v20200502/brook_linux_amd64",  # noqa: E950
             "/usr/local/bin/brook",
             mode=755,
-            sha256sum="b89886a9e3dcda83f64aadeb583a233e0c2c97aee2c624782a904d861d9fa807",
+            sha256sum="b89886a9e3dcda83f64aadeb583a233e0c2c97aee2c624782a904d861d9fa807",  # noqa: E950
         )
         server.shell(
             state,
             host,
-            f"nohup brook server -l {_get_host_ip(host.name)}:{environ['BROOK_PORT']} -p {environ['BROOK_PORT']} &",
+            f"nohup brook server -l {_get_host_ip(host.name)}:{environ['BROOK_PORT']} -p {environ['BROOK_PORT']} &",  # noqa: B950
             success_exit_codes=[0, 1],
         )
     else:
