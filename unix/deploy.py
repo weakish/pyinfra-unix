@@ -82,15 +82,15 @@ def brook(state: State, host: Host) -> None:
         files.download(
             state,
             host,
-            "https://github.com/txthinking/brook/releases/download/v20200502/brook_linux_amd64",  # noqa: E950
+            "https://github.com/txthinking/brook/releases/download/v20200909/brook_linux_amd64",  # noqa: E950
             "/usr/local/bin/brook",
             mode=755,
-            sha256sum="b89886a9e3dcda83f64aadeb583a233e0c2c97aee2c624782a904d861d9fa807",  # noqa: E950
+            sha256sum="efc4dc925bcaff4d33450fbcd02351da8f971f5cea6b84501a3d2a6f94876adf",  # noqa: E950
         )
         server.shell(
             state,
             host,
-            f"nohup brook server -l {_get_host_ip(host.name)}:{environ['BROOK_PORT']} -p {environ['BROOK_PORT']} &",  # noqa: B950
+            f"nohup brook server -l {_get_host_ip(host.name)}:{environ['BROOK_PORT']} -p {environ['BROOK_PASSWORD']} > /dev/null 2> /dev/null &",  # noqa: B950
             success_exit_codes=[0, 1],
         )
     else:
