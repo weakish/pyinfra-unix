@@ -95,3 +95,38 @@ def brook(state: State, host: Host) -> None:
         )
     else:
         python.raise_exception(state, host, NotImplementedError)
+
+
+@deploy
+def wireguard(state: State, host: Host) -> None:
+    """Install wireguard."""
+    if host.fact.os == "Linux":
+        if host.fact.linux_distribution["release_meta"]["ID"] in ["debian", "ubuntu"]:
+            apt.packages(state, host, "wireguard")
+        else:
+            python.raise_exception(state, host, NotImplementedError)
+    else:
+        python.raise_exception(state, host, NotImplementedError)
+
+    files.template(
+        state,
+        host,
+        "templates/wg0.conf.j2",
+        "/etc/wireguard/wg0.conf",
+        wg_private_key=environ["WG_PRIVATE_KEY"],
+        wg_port=environ["WG_PORT"],
+        wg_interface=environ["WG_INTERFACE"],
+        wg_peer_1_public_key=environ["WG_PEER_1_PUBLIC_KEY"],
+        wg_peer_2_public_key=environ["WG_PEER_2_PUBLIC_KEY"],
+    )
+
+    server.shell(
+        state,
+        host,
+        [
+            "sysctl -w net.ipv4.ip_forward=1",
+            "sysctl -w net.ipv6.conf.all.forwarding=1",
+            "wg-quick up wg0",
+        ],
+        success_exit_codes=[0, 1],
+    )

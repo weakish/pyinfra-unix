@@ -1,0 +1,14 @@
+[Interface]
+Address    = 10.200.200.1/24, fd86:ea04:1111::1/64
+PrivateKey = {{wg_private_key}}
+ListenPort = {{wg_port}}
+PostUp   = iptables -t nat -A POSTROUTING -o {{wg_interface}} -j MASQUERADE; ip6tables -t nat -A POSTROUTING -o {{wg_interface}} -j MASQUERADE
+PostDown = iptables -t nat -D POSTROUTING -o {{wg_interface}} -j MASQUERADE; ip6tables -t nat -A POSTROUTING -o {{wg_interface}} -j MASQUERADE
+ 
+[Peer]
+PublicKey  = {{wg_peer_1_public_key}}
+AllowedIPs = 10.200.200.2/32
+
+[Peer]
+PublicKey  = {{wg_peer_2_public_key}}
+AllowedIPs = 10.200.200.3/32, fd86:ea04:1111::2/128
