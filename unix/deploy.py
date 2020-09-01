@@ -9,40 +9,40 @@ from pyinfra.modules import apk, apt, brew, dnf, files, python, server
 from paramiko.config import SSHConfig
 from unix.operation import pkcon
 from unix.operation import freebsd
-from typing import Union
+from typing import Union, Optional
 
 
 @deploy
-def update(state: State, host: Host) -> None:
+def update(state: Optional[State] = None, host: Optional[Host] = None) -> None:
     """update system"""
     if host.fact.os == "Linux":
         if host.fact.linux_distribution["release_meta"]["ID"] == "neon":
-            pkcon.update(state, host)
+            pkcon.update(state=state, host=host)
         elif host.fact.linux_distribution["release_meta"]["ID"] in ["debian", "ubuntu"]:
-            apt.update(state, host)
-            apt.upgrade(state, host)
+            apt.update(state=state, host=host)
+            apt.upgrade(state=state, host=host)
         elif host.fact.linux_distribution["release_meta"]["ID"] == "fedora":
-            dnf.update(state, host)
+            dnf.update(state=state, host=host)
         elif host.fact.linux_distribution["release_meta"]["ID"] == "alpine":
-            apk.update(state, host)
-            apk.upgrade(state, host)
+            apk.update(state=state, host=host)
+            apk.upgrade(state=state, host=host)
 
         else:
             python.raise_exception(state, host, NotImplementedError)
     elif host.fact.os == "FreeBSD":
-        freebsd.update(state, host)
-        freebsd.upgrade(state, host)
+        freebsd.update(state=state, host=host)
+        freebsd.upgrade(state=state, host=host)
     elif host.fact.os == "Darwin":
-        brew.update(state, host)
-        brew.upgrade(state, host)
+        brew.update(state=state, host=host)
+        brew.upgrade(state=state, host=host)
     else:
         python.raise_exception(state, host, NotImplementedError)
 
 
 @deploy
-def ipv6(state: State, host: Host) -> None:
+def ipv6(state: Optional[State] = None, host: Optional[Host] = None) -> None:
     """Test if ipv6 configured correctly."""
-    server.shell(state, host, "ping6 -c1 ::1")
+    server.shell(commands=["ping6 -c1 ::1"], state=state, host=host)
 
 
 def _get_host_ip(
@@ -76,43 +76,48 @@ def _get_host_ip(
 
 
 @deploy
-def brook(state: State, host: Host) -> None:
+def brook(state: Optional[State] = None, host: Optional[Host] = None) -> None:
     """Install brook."""
     if host.fact.arch == "x86_64":
         files.download(
-            state,
-            host,
-            "https://github.com/txthinking/brook/releases/download/v20200909/brook_linux_amd64",  # noqa: E950
-            "/usr/local/bin/brook",
+            source_url="https://github.com/txthinking/brook/releases/download/v20200909/brook_linux_amd64",  # noqa: E950
+            destination="/usr/local/bin/brook",
             mode=755,
             sha256sum="efc4dc925bcaff4d33450fbcd02351da8f971f5cea6b84501a3d2a6f94876adf",  # noqa: E950
+            state=state,
+            host=host,
         )
         server.shell(
-            state,
-            host,
             f"nohup brook server -l {_get_host_ip(host.name)}:{environ['BROOK_PORT']} -p {environ['BROOK_PASSWORD']} > /dev/null 2> /dev/null &",  # noqa: B950
             success_exit_codes=[0, 1],
+            state=state,
+            host=host,
         )
     else:
         python.raise_exception(state, host, NotImplementedError)
 
 
 @deploy
-def wireguard(state: State, host: Host) -> None:
+def wireguard(state: Optional[State] = None, host: Optional[Host] = None) -> None:
     """Install wireguard."""
     if host.fact.os == "Linux":
         if host.fact.linux_distribution["release_meta"]["ID"] in ["debian", "ubuntu"]:
-            apt.packages(state, host, "wireguard")
+            apt.packages(packages=["wireguard"], state=state, host=host)
         else:
-            python.raise_exception(state, host, NotImplementedError)
+            python.raise_exception(
+                exception_class=NotImplementedError, state=state, host=host
+            )
     else:
-        python.raise_exception(state, host, NotImplementedError)
+        python.raise_exception(
+            exception_class=NotImplementedError, state=state, host=host
+        )
 
     files.template(
-        state,
-        host,
-        "templates/wg0.conf.j2",
-        "/etc/wireguard/wg0.conf",
+        template_filename="templates/wg0.conf.j2",
+        remote_filename="/etc/wireguard/wg0.conf",
+        create_remote_dir=True,
+        state=state,
+        host=host,
         wg_private_key=environ["WG_PRIVATE_KEY"],
         wg_port=environ["WG_PORT"],
         wg_interface=environ["WG_INTERFACE"],
@@ -120,13 +125,8 @@ def wireguard(state: State, host: Host) -> None:
         wg_peer_2_public_key=environ["WG_PEER_2_PUBLIC_KEY"],
     )
 
+    server.sysctl(key="net.ipv4.ip_forward", value=1, state=state, host=host)
+    server.sysctl(key="net.ipv6.conf.all.forwarding", value=1, state=state, host=host)
     server.shell(
-        state,
-        host,
-        [
-            "sysctl -w net.ipv4.ip_forward=1",
-            "sysctl -w net.ipv6.conf.all.forwarding=1",
-            "wg-quick up wg0",
-        ],
-        success_exit_codes=[0, 1],
+        commands=["wg-quick up wg0"], success_exit_codes=[0, 1], state=state, host=host
     )
