@@ -1,1 +1,3 @@
-pyinfra
+pyinfra~=0.14.5
+paramiko~=2.7.1
+typing~=3.7.4.1
